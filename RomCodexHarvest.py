@@ -2,13 +2,10 @@ import requests
 
 
 def mob_harvest(key_id):
-    url_search = 'https://www.romcodex.com/api/monster/'
     # key_id = 10267 (Test)
-    url = url_search + str(key_id)
+    url = 'https://www.romcodex.com/api/monster/' + str(key_id)
 
     result = requests.get(url)
-    result.status_code
-    result.text
     result_json = result.json()
 
     # Mob Attributes
@@ -18,7 +15,8 @@ def mob_harvest(key_id):
     race = result_json['Race']  # Race
     size = result_json['Shape']  # Size
     mob_type = result_json['Type']  # MVP?
-    location = result_json['Location']['120']['NameZh__EN']  # Location ##NOT DONE--CHANGING ID
+    location_key = list(result_json['Location'])[0]  # Need location key
+    location = result_json['Location'][str(location_key)]['NameZh__EN']  # Location
     base_exp = result_json['BaseExp']  # Base EXP
     job_exp = result_json['JobExp']  # Job EXP
     strength = result_json['Str']  # STR
@@ -48,25 +46,30 @@ def mob_harvest(key_id):
     for i in range(7, len(mob_attributes)):
         mob_attributes[i] = int(mob_attributes[i])
 
-    # Loot Data
-    loot_ids = []  # Grab ID
+    # Grab Loot IDs
+    loot_ids = []
     for i in range(0, len(result_json['LootData'])):
         loot_ids.append(result_json['LootData'][i]['id'])
 
-    loot_names = []  # Grab in-game names
+    # Grab in-game names
+    loot_names = []
     for i in range(0, len(result_json['LootData'])):
+        # ID 100 = Zeny (currency) which must be indexed differently than other IDs
         if loot_ids[i] == 100:
             loot_names.append(result_json['LootData'][i]['item_data']['NameZh'])
         else:
             loot_names.append(result_json['LootData'][i]['item_data']['NameZh__EN'])
 
-    loot_qtys = []  # Grab quantity of item - always either 1 or higher number (zeny)
+    # Grab quantity of item - always either 1 or XXX int (zeny)
+    loot_qtys = []
     for i in range(0, len(result_json['LootData'])):
         loot_qtys.append(result_json['LootData'][i]['num'])
 
-    for i in range(0, len(result_json['LootData'])):  # Merge zeny and quantities
+    # Merge zeny and quantities
+    for i in range(0, len(result_json['LootData'])):
         if loot_names[i] == 'Zeny':
             loot_names[i] = str(loot_qtys[i]) + ' Zeny'
 
+    # Combine the data (mob stats and mob loot)
     mob_data_all = mob_attributes + loot_names
     return mob_data_all
